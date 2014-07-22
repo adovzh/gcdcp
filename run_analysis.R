@@ -15,4 +15,13 @@ subjecttest <- read.table(subjecttest.fname)
 activitylabels <- read.table(activitylabels.fname)
 features <- read.table(features.fname)
 
-X <- rbind(Xtrain, Xtest)
+train <- cbind(ytrain, Xtrain)
+test <- cbind(ytest, Xtest)
+
+data <- rbind(train, test)
+var.names <- c("ActivityId", as.character(features[,2]))
+colnames(data) <- var.names
+meanStdCols <- grep("(mean|std)\\(\\)", var.names)
+data <- data[, c(1, meanStdCols)]
+
+colnames(activitylabels) <- c("ActivityId", "Activity")
