@@ -1,33 +1,58 @@
-data.dir <- "UCI HAR Dataset"
-Xtrain.fname <- paste0(data.dir, "/train/X_train.txt")
-ytrain.fname <- paste0(data.dir, "/train/y_train.txt")
-subjecttrain.fname <- paste0(data.dir, "/train/subject_train.txt")
-Xtest.fname <- paste0(data.dir, "/test/X_test.txt")
-ytest.fname <- paste0(data.dir, "/test/y_test.txt")
-subjecttest.fname <- paste0(data.dir, "/test/subject_test.txt")
-activitylabels.fname <- paste0(data.dir, "/activity_labels.txt")
-features.fname <- paste0(data.dir, "/features.txt")
+# location of data directory
+DATA_DIR <- "UCI HAR Dataset"
 
-Xtrain <- read.table(Xtrain.fname)
-ytrain <- read.table(ytrain.fname)
-subjecttrain <- read.table(subjecttrain.fname)
-Xtest <- read.table(Xtest.fname)
-ytest <- read.table(ytest.fname)
-subjecttest <- read.table(subjecttest.fname)
-activitylabels <- read.table(activitylabels.fname)
-features <- read.table(features.fname)
+# train dataset locations
+X_TRAIN_FNAME <- paste0(DATA_DIR, "/train/X_train.txt")
+LABELS_TRAIN_FNAME <- paste0(DATA_DIR, "/train/y_train.txt")
+SUBJECT_TRAIN_FNAME <- paste0(DATA_DIR, "/train/subject_train.txt")
 
-train <- cbind(ytrain, subjecttrain, Xtrain)
-test <- cbind(ytest, subjecttest, Xtest)
+# test dataset locations
+X_TEST_FNAME <- paste0(DATA_DIR, "/test/X_test.txt")
+LABELS_TEST_FNAME <- paste0(DATA_DIR, "/test/y_test.txt")
+SUBJECT_TEST_FNAME <- paste0(DATA_DIR, "/test/subject_test.txt")
 
+# activity and features labels file locations
+ACTIVITY_LABELS_FNAME <- paste0(DATA_DIR, "/activity_labels.txt")
+FEATURES_FNAME <- paste0(DATA_DIR, "/features.txt")
+
+# name of the result file
+RESULT_FILE <- "aggregated.txt"
+
+# load datasets into appropriate data frames
+Xtrain <- read.table(X_TRAIN_FNAME)
+labels.train <- read.table(LABELS_TRAIN_FNAME)
+subject.train <- read.table(SUBJECT_TRAIN_FNAME)
+Xtest <- read.table(X_TEST_FNAME)
+labels.test <- read.table(LABELS_TEST_FNAME)
+subject.test <- read.table(SUBJECT_TEST_FNAME)
+activity.labels <- read.table(ACTIVITY_LABELS_FNAME)
+features <- read.table(FEATURES_FNAME)
+
+# combine datasets column-wise
+train <- cbind(labels.train, subject.train, Xtrain)
+test <- cbind(labels.test, subject.test, Xtest)
+
+# merge train and test datasets
 data <- rbind(train, test)
+
+# use 'features' dataset to label variables appropriately
 var.names <- c("Activity", "Subject", as.character(features[,2]))
 colnames(data) <- var.names
+
+# Variables describing means (standard deviations) match 'mean()' ('std()')
 meanStdCols <- grep("(mean|std)\\(\\)", var.names)
+# Only 'Activity', 'Subject' and those describing means and 
+# standard deviations variables are retained
 data <- data[, c(1:2, meanStdCols)]
 
-agg <- aggregate(. ~ Activity + Subject, datd, mean)
-
+# Activity numbers are in the first columns
+# Replace them with appropriate desciptive names from 'activity.labels' dataset
 data[,1] <- sapply(data[,1], function(i) { 
-    activitylabels[match(i, activitylabels[,1]), 2]
+    activity.labels[match(i, activity.labels[,1]), 2]
 })
+
+# Calculate means of each variable by Activity and Subject
+agg <- aggregate(. ~ Activity + Subject, data, mean)
+
+# Write tidy dataset on disk
+write.table(agg, file = RESULT_FILE, row.names = FALSE)

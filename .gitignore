@@ -5,3 +5,5 @@ UCI HAR Dataset
 .RData
 .Rhistory
 *.Rproj
+aggregated.txt
+
